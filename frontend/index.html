@@ -5,26 +5,22 @@
         <link rel="icon" type="image/svg+xml" href="/vite.svg"/>
         <link rel="stylesheet" type="" href="./style.css">
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Vite App</title>
+        <title>dApp</title>
         <script defer src="main.js" type="module"></script>
     </head>
     <body>
-        <div id="app">
-            <div>
-                <a href="https://vitejs.dev" target="_blank">
-                    <img src="/vite.svg" class="logo" alt="Vite logo" />
-                </a>
-                <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-                    <img src="/javascript.svg" class="logo vanilla" alt="JavaScript logo" />
-                </a>
-                <h1>Hello Vite!</h1>
-                <div class="card">
-                    <button id="counter" type="button"></button>
-                </div>
-                <p class="read-the-docs">
-                    Click on the Vite logo to learn more
-                </p>
-            </div>
+        <h1>Hello Solana Blockchain!</h1>
+        <div class="is-not-connected">
+            <form method="post" autocomplete="off" id="connect">
+                <input type="password" name="private-key" value="" placeholder="enter private key">
+                <button type="submit">connect</button>
+                <span class="error"></span>
+            </form>
         </div>
+        <div class="is-connected">
+            <span id="public-key"></span>
+            <button type="button" id="disconnect">disconnect</button>
+        </div>
+        <hr>
     </body>
 </html>
