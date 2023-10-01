@@ -1,0 +1,25 @@
+# EditorConfig is a configuration file for text editors.
+# For more information about the EditorConfig project, visit http://editorconfig.org/
+
+# Top-most EditorConfig file
+root = true
+
+# Rust settings
+[*.rs]
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# TypeScript settings
+[*.ts]
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Ignore some commonly generated files
+[**/node_modules/**]
+ignore = true
+[**/target/**]
+ignore = true
