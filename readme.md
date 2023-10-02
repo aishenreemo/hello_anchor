@@ -2,8 +2,9 @@
 A decentralized application (dApp) built on the Solana blockchain and Anchor framework, made for my educational purposes.
 
 ## Todo
-- [x] Connects via `@solana/web3.js`
+- [x] Connects wallet via Phantom.
 - [ ] User enters data then write to Solana blockchain
+- [ ] Retrieve those data from Solana blockchain
 
 ## Technology Stack
 - [Rust](https://www.rust-lang.org/)

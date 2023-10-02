@@ -28,11 +28,3 @@
     box-sizing: border-box;
     scroll-behavior: smooth;
 }
-
-.error {
-    color: var(--color-red);
-}
-
-#connect > input[name="private-key"] {
-    width: clamp(20rem, 70vw, 45rem);
-}

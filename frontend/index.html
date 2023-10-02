@@ -10,17 +10,8 @@
     </head>
     <body>
         <h1>Hello Solana Blockchain!</h1>
-        <div class="is-not-connected">
-            <form method="post" autocomplete="off" id="connect">
-                <input type="password" name="private-key" value="" placeholder="enter private key">
-                <button type="submit">connect</button>
-                <span class="error"></span>
-            </form>
-        </div>
-        <div class="is-connected">
-            <span id="public-key"></span>
-            <button type="button" id="disconnect">disconnect</button>
-        </div>
-        <hr>
+        <button type="button" id="connect-wallet">Connect Wallet</button>
+        <button type="button" id="disconnect-wallet">Disconnect Wallet</button>
+        <button type="button">Initialize</button>
     </body>
 </html>

@@ -1,58 +1,68 @@
 import * as web3 from "@solana/web3.js";
-import bs58 from "bs58";
+import * as anchor from "@coral-xyz/anchor";
+import buffer from "buffer";
 
-let connection;
-let keypair;
+async function main() {
+    const walletProvider = getProvider();
+    const anchorProgram = await getProgram(walletProvider);
 
-function main() {
-    setStateOfConnection(false);
-    createConnectionEventHandler(
-        document.getElementById("connect"),
-        document.getElementById("disconnect"),
+    await walletProvider.connect({ onlyIfTrusted: true });
+    await createEvents(walletProvider, anchorProgram);
+}
+
+async function createEvents(walletProvider, anchorProgram) {
+    const connectButton = document.getElementById("connect-wallet");
+    const disconnectButton = document.getElementById("disconnect-wallet");
+    const initializeNewAccountButton = document.getElementById("initialize-button");
+
+    connectButton.addEventListener("click", async () => {
+        await walletProvider.connect();
+    });
+
+    disconnectButton.addEventListener("click", async () => {
+        await walletProvider.disconnect();
+    });
+
+    initializeNewAccountButton.addEventListener("click", async () => {
+        const keypair = anchor.web3.Keypair.generate();
+        const options = {
+            data: keypair.publicKey,
+            signer: walletProvider.publicKey,
+            systemProgram: anchor.web3.SystemProgram.programId,
+        }
+
+        const tx = await anchorProgram
+            .methods
+            .initialize("hello")
+            .accounts(options)
+            .signers([keypair])
+            .rpc();
+
+        console.log("Your transaction signature", tx);
+        console.log(await anchorProgram.account.data.all());
+    })
+}
+
+async function getProgram(walletProvider) {
+    window.Buffer = window.Buffer || buffer.Buffer;
+
+    const options = anchor.AnchorProvider.defaultOptions();
+    const connection = new web3.Connection(web3.clusterApiUrl("devnet"), "confirmed");
+    const anchorProvider = new anchor.AnchorProvider(connection, walletProvider, options);
+
+    return new anchor.Program(
+        await anchor.Program.fetchIdl("HDYyTAVBJL1JMp3kUukxy784micPpWRMBjBZF9zJQ1cX", anchorProvider),
+        new web3.PublicKey("HDYyTAVBJL1JMp3kUukxy784micPpWRMBjBZF9zJQ1cX"),
+        anchorProvider
     );
 }
 
-function createConnectionEventHandler(formConnect, buttonDisconnect) {
-    const errorElement = formConnect.querySelector(".error");
-    const publicKeyElement = document.getElementById("public-key");
+function getProvider() {
+    if (window?.phantom?.solana?.isPhantom) {
+        return window.phantom.solana;
+    }
 
-    formConnect.addEventListener("submit", async (event) => {
-        event.preventDefault();              
-
-        const data = Object.fromEntries(new FormData(formConnect));
-
-        try {
-            connection = new web3.Connection(web3.clusterApiUrl("devnet"), "confirmed");
-            keypair = web3.Keypair.fromSecretKey(bs58.decode(data["private-key"]));
-
-            publicKeyElement.innerText = keypair.publicKey.toString();
-            errorElement.innerText = "";
-
-            formConnect.reset();
-            setStateOfConnection(true);
-        } catch (error) {
-            errorElement.innerText = `Invalid key! ${error.toString()}`;
-            buttonDisconnect.click();
-        }
-    });
-
-    buttonDisconnect.addEventListener("click", () => {
-        publicKeyElement.innerText = "";
-        connection = null;
-        keypair = null;
-
-        setStateOfConnection(false);
-    });
-}
-
-function setStateOfConnection(isConnected) {
-    document.querySelectorAll(".is-connected").forEach(element => {
-        element.style.display = isConnected ? "inline-block" : "none";
-    });
-
-    document.querySelectorAll(".is-not-connected").forEach(element => {
-        element.style.display = isConnected ? "none" : "inline-block";
-    });
+    window.open("https://phantom.app/", "_blank");
 }
 
 main();
