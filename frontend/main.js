@@ -1,4 +1,3 @@
-import * as web3 from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 
 async function main() {
@@ -29,13 +28,13 @@ async function createEvents(walletProvider, _anchorProgram) {
 
 async function getProgram(walletProvider) {
     const options = anchor.AnchorProvider.defaultOptions();
-    const connection = new web3.Connection(web3.clusterApiUrl("devnet"), "confirmed");
+    const connection = new anchor.web3.Connection(anchor.web3.clusterApiUrl("devnet"), "confirmed");
     const anchorProvider = new anchor.AnchorProvider(connection, walletProvider, options);
     const programId = "HDYyTAVBJL1JMp3kUukxy784micPpWRMBjBZF9zJQ1cX";
 
     return new anchor.Program(
         await anchor.Program.fetchIdl(programId, anchorProvider),
-        new web3.PublicKey(programId),
+        new anchor.web3.PublicKey(programId),
         anchorProvider
     );
 }
