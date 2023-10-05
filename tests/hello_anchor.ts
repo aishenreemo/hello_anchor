@@ -9,30 +9,18 @@ describe("hello_anchor", () => {
     const keypair = anchor.web3.Keypair.generate();
     const provider = anchor.getProvider();
 
-    it("increments!", async () => {
+    it("initializes board!", async () => {
         const initializeOptions = {
-            data: keypair.publicKey,
+            board: keypair.publicKey,
             signer: provider.publicKey,
             systemProgram: anchor.web3.SystemProgram.programId,
         };
 
         await program
             .methods
-            .initialize()
+            .createBoard(keypair.publicKey)
             .accounts(initializeOptions)
             .signers([keypair])
-            .rpc();
-
-        await program
-            .methods
-            .increment()
-            .accounts({ data: keypair.publicKey })
-            .rpc();
-
-        await program
-            .methods
-            .increment()
-            .accounts({ data: keypair.publicKey })
             .rpc();
     });
 });

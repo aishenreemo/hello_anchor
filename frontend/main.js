@@ -31,14 +31,13 @@ async function createEvents(walletProvider) {
 }
 
 async function fetchAccounts(anchorProgram) {
-    const dataContainer = document.getElementById("data-container");
-    const dataList = await anchorProgram.account.data.all();
-
     console.log(anchorProgram.account);
+    const dataContainer = document.getElementById("data-container");
+    const dataList = await anchorProgram.account.board.all();
 
     for (let i = 0; i < dataList.length; i++) {
         const div = document.createElement("div");
-        div.innerText = `${dataList[i].publicKey}: ${dataList[i].account.count}`;
+        div.innerText = `${dataList[i].publicKey}: ${JSON.stringify(dataList[i].account)}`;
 
         dataContainer.appendChild(div);
         console.log(dataList[i]);

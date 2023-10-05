@@ -1,4 +1,8 @@
+pub mod board;
+pub mod errors;
+
 use anchor_lang::prelude::*;
+use board::Board;
 
 declare_id!("HphBSRZUiKWettW3AMXZSpm4nB7SH4pjRqRvTHTJdgvs");
 
@@ -6,39 +10,16 @@ declare_id!("HphBSRZUiKWettW3AMXZSpm4nB7SH4pjRqRvTHTJdgvs");
 pub mod hello_anchor {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        let data = &mut ctx.accounts.data;
-        data.count = 0;
-
-        Ok(())
-    }
-
-    pub fn increment(ctx: Context<Increment>) -> Result<()> {
-        let data = &mut ctx.accounts.data;
-        data.count += 1;
-
-        msg!("count: {}", data.count);
-
-        Ok(())
+    pub fn create_board(ctx: Context<CreateBoard>, owner: Pubkey) -> Result<()> {
+        ctx.accounts.board.start(owner)
     }
 }
 
 #[derive(Accounts)]
-pub struct Initialize<'info> {
-    #[account(init, payer=signer, space=std::mem::size_of::<Increment>())]
-    pub data: Account<'info, Data>,
+pub struct CreateBoard<'info> {
+    #[account(init, payer=owner, space=Board::MAX_SIZE+8)]
+    pub board: Account<'info, Board>,
     #[account(mut)]
-    pub signer: Signer<'info>,
+    pub owner: Signer<'info>,
     pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct Increment<'info> {
-    #[account(mut)]
-    pub data: Account<'info, Data>,
-}
-
-#[account]
-pub struct Data {
-    count: u32,
 }
