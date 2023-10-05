@@ -1,14 +1,18 @@
 import * as anchor from "@coral-xyz/anchor";
+import buffer from "buffer";
+
+const PROGRAM_ID = "HphBSRZUiKWettW3AMXZSpm4nB7SH4pjRqRvTHTJdgvs";
 
 async function main() {
     const walletProvider = getProvider();
     const anchorProgram = await getProgram(walletProvider);
 
     await walletProvider.connect({ onlyIfTrusted: true }).catch(() => {});
-    await createEvents(walletProvider, anchorProgram);
+    await createEvents(walletProvider);
+    await fetchAccounts(anchorProgram);
 }
 
-async function createEvents(walletProvider, _anchorProgram) {
+async function createEvents(walletProvider) {
     const toggleConnectButton = document.getElementById("connect-wallet");
     const buttonText = walletProvider.isConnected ? "Disconnect" : "Connect"
 
@@ -26,7 +30,24 @@ async function createEvents(walletProvider, _anchorProgram) {
     });
 }
 
+async function fetchAccounts(anchorProgram) {
+    const dataContainer = document.getElementById("data-container");
+    const dataList = await anchorProgram.account.data.all();
+
+    console.log(anchorProgram.account);
+
+    for (let i = 0; i < dataList.length; i++) {
+        const div = document.createElement("div");
+        div.innerText = `${dataList[i].publicKey}: ${dataList[i].account.count}`;
+
+        dataContainer.appendChild(div);
+        console.log(dataList[i]);
+    }
+}
+
 async function getProgram(walletProvider) {
+    window.Buffer = buffer.Buffer;
+
     const options = anchor.AnchorProvider.defaultOptions();
     const connection = new anchor.web3.Connection(anchor.web3.clusterApiUrl("devnet"), "confirmed");
     const anchorProvider = new anchor.AnchorProvider(connection, walletProvider, options);

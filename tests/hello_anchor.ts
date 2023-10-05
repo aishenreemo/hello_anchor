@@ -9,20 +9,30 @@ describe("hello_anchor", () => {
     const keypair = anchor.web3.Keypair.generate();
     const provider = anchor.getProvider();
 
-    it("is initialized", async () => {
-        const options = {
+    it("increments!", async () => {
+        const initializeOptions = {
             data: keypair.publicKey,
             signer: provider.publicKey,
             systemProgram: anchor.web3.SystemProgram.programId,
-        }
+        };
 
-        const tx = await program
+        await program
             .methods
-            .initialize("hello")
-            .accounts(options)
+            .initialize()
+            .accounts(initializeOptions)
             .signers([keypair])
             .rpc();
 
-        console.log("Your transaction signature", tx);
+        await program
+            .methods
+            .increment()
+            .accounts({ data: keypair.publicKey })
+            .rpc();
+
+        await program
+            .methods
+            .increment()
+            .accounts({ data: keypair.publicKey })
+            .rpc();
     });
 });
