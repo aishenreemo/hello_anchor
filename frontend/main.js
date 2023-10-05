@@ -30,11 +30,10 @@ async function getProgram(walletProvider) {
     const options = anchor.AnchorProvider.defaultOptions();
     const connection = new anchor.web3.Connection(anchor.web3.clusterApiUrl("devnet"), "confirmed");
     const anchorProvider = new anchor.AnchorProvider(connection, walletProvider, options);
-    const programId = "HDYyTAVBJL1JMp3kUukxy784micPpWRMBjBZF9zJQ1cX";
 
     return new anchor.Program(
-        await anchor.Program.fetchIdl(programId, anchorProvider),
-        new anchor.web3.PublicKey(programId),
+        await anchor.Program.fetchIdl(PROGRAM_ID, anchorProvider),
+        new anchor.web3.PublicKey(PROGRAM_ID),
         anchorProvider
     );
 }
