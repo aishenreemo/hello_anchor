@@ -5,25 +5,37 @@ use anchor_lang::prelude::*;
 use super::errors::BoardError;
 
 #[account]
+#[derive(Default)]
 pub struct Board {
     players: [Player; 5],
     state: BoardState,
     tiles: [Sign; 9],
     turn: u8,
+    bump: u8,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, Debug)]
+#[derive(
+    AnchorSerialize,
+    AnchorDeserialize,
+    Clone,
+    PartialEq,
+    Eq,
+    Debug,
+    Default
+)]
 pub enum BoardState {
-    Completed { is_robot_winner: bool },
+    #[default]
     Active,
     Tie,
+    Completed { is_robot_winner: bool },
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub enum Player {
-    Human { pubkey: Pubkey },
-    Robot,
+    #[default]
     None,
+    Robot,
+    Human { pubkey: Pubkey },
 }
 
 #[derive(
@@ -36,15 +48,24 @@ pub enum Player {
     PartialEq,
     Eq,
     Debug,
+    Default,
 )]
 pub enum Sign {
+    #[default]
+    N,
     X,
     O,
-    N,
 }
 
 impl Board {
-    pub const MAX_SIZE: usize = (1 + 32) * 5 + 2 + (1 * 9) + 1;
+    pub const MAX_SIZE: usize = (1 + 32) * 5 + 2 + (1 * 9) + 1 + 8;
+
+    pub fn new(bump: u8) -> Board {
+        let mut board = Board::default();
+        board.bump = bump;
+        board
+    }
+
     pub fn start(&mut self, owner: Pubkey) -> Result<()> {
         require!(self.turn == 0, BoardError::GameAlreadyStarted);
 
@@ -63,6 +84,7 @@ impl Board {
         require!(self.state == BoardState::Active, BoardError::GameAlreadyCompleted);
 
         self.state = BoardState::Completed { is_robot_winner: false };
+        self.turn = 0;
 
         Ok(())
     }

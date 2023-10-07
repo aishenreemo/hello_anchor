@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import buffer from "buffer";
 
-const PROGRAM_ID = "HphBSRZUiKWettW3AMXZSpm4nB7SH4pjRqRvTHTJdgvs";
+const PROGRAM_ID = "vGsRgLSQh24Jb2BjJkR6TFQGcmq2q9JBwv81qQZoQ4h";
 
 async function main() {
     const walletProvider = getProvider();
@@ -14,7 +14,7 @@ async function main() {
 
 async function createEvents(walletProvider) {
     const toggleConnectButton = document.getElementById("connect-wallet");
-    const buttonText = walletProvider.isConnected ? "Disconnect" : "Connect"
+    const buttonText = walletProvider.isConnected ? "Disconnect" : "Connect";
 
     toggleConnectButton.innerText = `${buttonText} Wallet`;
     toggleConnectButton.addEventListener("click", async () => {
