@@ -6,56 +6,102 @@ const PROGRAM_ID = "vGsRgLSQh24Jb2BjJkR6TFQGcmq2q9JBwv81qQZoQ4h";
 async function main() {
     const walletProvider = getProvider();
     const anchorProgram = await getProgram(walletProvider);
-    const container = document.getElementById("board-container");
-
-    await walletProvider.connect({ onlyIfTrusted: true })
-        .then(async () => await fetchBoards(anchorProgram))
-        .catch(() => container.style.display = "none");
 
     await createEvents(walletProvider, anchorProgram);
+    await walletProvider.connect({ onlyIfTrusted: true })
+        .catch(() => syncDisplayOnConnection(false));
 }
 
 async function createEvents(walletProvider, anchorProgram) {
     const toggleConnectButton = document.getElementById("connect-wallet");
-    const buttonText = walletProvider.isConnected ? "Disconnect" : "Connect";
+    const createBoardButton = document.getElementById("create-your-board");
     const container = document.getElementById("board-container");
+    const balanceElement = document.getElementById("sol-balance");
+    const errorElement = document.getElementById("error");
 
-    toggleConnectButton.innerText = `${buttonText} Wallet`;
+    walletProvider.on("connect", async () => {
+        const balance = await anchorProgram
+            .provider
+            .connection
+            .getBalance(walletProvider.publicKey);
+
+        balanceElement.innerText = `${balance / anchor.web3.LAMPORTS_PER_SOL} SOL`;
+        toggleConnectButton.innerText = "Disconnect Wallet";
+        errorElement.innerText = "";
+
+        syncDisplayOnConnection(true);
+        await fetchBoards(walletProvider, anchorProgram, container);
+    });
+
+    walletProvider.on("disconnect", () => {
+        syncDisplayOnConnection(false);
+        toggleConnectButton.innerText = "Connect Wallet";
+        errorElement.innerText = "";
+    });
+
     toggleConnectButton.addEventListener("click", async () => {
-        if (walletProvider.isConnected) {
-            await walletProvider.disconnect();
-            toggleConnectButton.innerText = "Connect Wallet";
-            container.style.display = "none";
+        walletProvider.isConnected
+            ? await walletProvider.disconnect()
+            : await walletProvider.connect();
+    });
 
-            while (container.firstChild) {
-                container.removeChild(container.firstChild);
-            }
-
+    createBoardButton.addEventListener("click", async () => {
+        if (!walletProvider.isConnected) {
             return;
         }
 
-        await walletProvider.connect();
-        await fetchBoards(anchorProgram);
-        container.style.display = "flex";
-        toggleConnectButton.innerText = "Disconnect Wallet";
+        const boardSeeds = [
+            anchor.utils.bytes.utf8.encode("tictactoe-board"),
+            walletProvider.publicKey.toBuffer(),
+        ];
+
+        const [boardPDA, boardBump] = anchor
+            .web3
+            .PublicKey
+            .findProgramAddressSync(boardSeeds, anchorProgram.programId);
+
+        const boardAccounts = {
+            board: boardPDA,
+            owner: walletProvider.publicKey,
+        };
+
+        const providerAccount = await anchorProgram.account.board.fetch(boardPDA);
+
+        if (providerAccount) {
+            errorElement.innerText = "Tictactoe Board may already be initialized.";
+            return;
+        }
+
+        await anchorProgram.methods.createBoard(boardBump).accounts(boardAccounts).rpc();
+        await fetchBoards(walletProvider, anchorProgram, container);
     });
 }
 
-async function fetchBoards(anchorProgram) {
-    const container = document.getElementById("board-container");
+async function fetchBoards(walletProvider, anchorProgram, container) {
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+
     const boards = await anchorProgram.account.board.all();
+    let providerBoardIndex = 0;
 
     for (let i = 0; i < boards.length; i++) {
-        const board = boards[Math.floor(i)];
+        const board = boards[i];
         const infoDiv = document.createElement("div");
         const boardDiv = document.createElement("div");
         const boardWrapper = document.createElement("div");
-        
+
         infoDiv.classList.add("info");
         boardDiv.classList.add("board");
         boardWrapper.classList.add("board-wrapper");
 
-        infoDiv.innerText = `${board.account.players[1].human.pubkey}`;
+        const pubkey = board.account.players[1].human.pubkey.toString();
+        infoDiv.innerText = pubkey;
+        boardWrapper.dataset.pubkey = pubkey;
+
+        if (pubkey.toString() == walletProvider.publicKey.toString()) {
+            providerBoardIndex = i;
+        }
 
         for (let j = 0; j < board.account.tiles.length; j++) {
             const tile = Object.keys(board.account.tiles[j])[0];
@@ -79,9 +125,21 @@ async function fetchBoards(anchorProgram) {
             boardDiv.appendChild(cellDiv);
         }
 
+        boardWrapper.dataset.index = i;
         boardWrapper.appendChild(boardDiv);
         boardWrapper.appendChild(infoDiv);
         container.appendChild(boardWrapper);
+    }
+
+    if (providerBoardIndex > 0) {
+        const elementA = container.firstChild;
+        const elementB = container.childNodes.item(providerBoardIndex);
+
+        elementB.parentNode.insertBefore(elementB, elementA);
+    }
+
+    if (container.firstChild.dataset.pubkey == walletProvider.publicKey.toString()) {
+        container.firstChild.style.border = "1px solid var(--color-blue)";
     }
 }
 
@@ -97,6 +155,12 @@ async function getProgram(walletProvider) {
         new anchor.web3.PublicKey(PROGRAM_ID),
         anchorProvider
     );
+}
+
+function syncDisplayOnConnection(boolean) {
+    Array.from(document.getElementsByClassName("connected")).forEach(element => {
+        element.style.display = boolean ? element.dataset.display : "none";
+    });
 }
 
 function getProvider() {

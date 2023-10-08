@@ -10,6 +10,14 @@
     <body>
         <h1>Hello Solana Blockchain!</h1>
         <button type="button" id="connect-wallet">Connect Wallet</button>
-        <div id="board-container"></div>
+        <button 
+            type="button"
+            id="create-your-board"
+            class="connected"
+            data-display="inline-block"
+        >Create Your Board</button>
+        <span id="sol-balance" class="connected" data-display="inline">0 SOL</span>
+        <span id="error" class="connected" data-display="inline"></span>
+        <div id="board-container" class="connected" data-display="flex"></div>
     </body>
 </html>

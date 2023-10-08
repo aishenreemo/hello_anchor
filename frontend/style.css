@@ -55,6 +55,10 @@ button {
     padding: 0.5rem;
 }
 
+#error {
+    color: var(--color-red);
+}
+
 #board-container {
     width: calc(100% - 1rem);
     padding: 1rem;

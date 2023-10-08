@@ -3,8 +3,9 @@ A decentralized application (dApp) built on the Solana blockchain and Anchor fra
 
 ## Todo
 - [x] Connects wallet via Phantom.
-- [ ] User enters data then write to Solana blockchain
+- [x] User enters data then write to Solana blockchain (barely)
 - [x] Retrieve those data from Solana blockchain (barely)
+- [ ] Tictactoe implementation with minimax algorithm
 
 ## Technology Stack
 - [Rust](https://www.rust-lang.org/)
