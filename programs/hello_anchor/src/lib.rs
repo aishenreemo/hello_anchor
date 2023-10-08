@@ -3,6 +3,7 @@ pub mod errors;
 
 use anchor_lang::prelude::*;
 use board::Board;
+use board::Sign;
 
 declare_id!("vGsRgLSQh24Jb2BjJkR6TFQGcmq2q9JBwv81qQZoQ4h");
 
@@ -21,6 +22,15 @@ pub mod hello_anchor {
 
     pub fn complete_board(ctx: Context<MutateBoard>) -> Result<()> {
         ctx.accounts.board.complete()
+    }
+
+    pub fn make_move(
+        ctx: Context<MutateBoard>,
+        participant: Pubkey,
+        index: u8,
+        key: Sign,
+    ) -> Result<()> {
+        ctx.accounts.board.make_move(participant, index as usize, key)
     }
 }
 

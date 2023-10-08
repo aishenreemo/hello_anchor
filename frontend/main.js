@@ -45,36 +45,42 @@ async function createEvents(walletProvider, anchorProgram) {
             : await walletProvider.connect();
     });
 
-    createBoardButton.addEventListener("click", async () => {
-        if (!walletProvider.isConnected) {
-            return;
-        }
+    createBoardButton.addEventListener("click", () => createBoard(
+        walletProvider,
+        anchorProgram
+    ));
+}
 
-        const boardSeeds = [
-            anchor.utils.bytes.utf8.encode("tictactoe-board"),
-            walletProvider.publicKey.toBuffer(),
-        ];
+async function createBoard(walletProvider, anchorProgram) {
+    if (!walletProvider.isConnected) {
+        return;
+    }
 
-        const [boardPDA, boardBump] = anchor
-            .web3
-            .PublicKey
-            .findProgramAddressSync(boardSeeds, anchorProgram.programId);
+    const errorElement = document.getElementById("error");
+    const boardSeeds = [
+        anchor.utils.bytes.utf8.encode("tictactoe-board"),
+        walletProvider.publicKey.toBuffer(),
+    ];
 
-        const boardAccounts = {
-            board: boardPDA,
-            owner: walletProvider.publicKey,
-        };
+    const [boardPDA, boardBump] = anchor
+        .web3
+        .PublicKey
+        .findProgramAddressSync(boardSeeds, anchorProgram.programId);
 
-        const providerAccount = await anchorProgram.account.board.fetch(boardPDA);
+    const providerAccount = await anchorProgram.account.board.fetch(boardPDA);
 
-        if (providerAccount) {
-            errorElement.innerText = "Tictactoe Board may already be initialized.";
-            return;
-        }
+    if (providerAccount) {
+        errorElement.innerText = "Tictactoe Board may already be initialized.";
+        return;
+    }
 
-        await anchorProgram.methods.createBoard(boardBump).accounts(boardAccounts).rpc();
-        await fetchBoards(walletProvider, anchorProgram, container);
-    });
+    const boardAccounts = {
+        board: boardPDA,
+        owner: walletProvider.publicKey,
+    };
+
+    await anchorProgram.methods.createBoard(boardBump).accounts(boardAccounts).rpc();
+    await fetchBoards(walletProvider, anchorProgram, container);
 }
 
 async function fetchBoards(walletProvider, anchorProgram, container) {
@@ -99,7 +105,7 @@ async function fetchBoards(walletProvider, anchorProgram, container) {
         infoDiv.innerText = pubkey;
         boardWrapper.dataset.pubkey = pubkey;
 
-        if (pubkey.toString() == walletProvider.publicKey.toString()) {
+        if (pubkey == walletProvider.publicKey.toString()) {
             providerBoardIndex = i;
         }
 
@@ -107,19 +113,7 @@ async function fetchBoards(walletProvider, anchorProgram, container) {
             const tile = Object.keys(board.account.tiles[j])[0];
             const cellDiv = document.createElement("div");
 
-            switch (tile) {
-                case "x":
-                    cellDiv.innerText = "X";
-                    cellDiv.style.color = "var(--color-red)";
-                    break;
-                case "o":
-                    cellDiv.innerText = "O";
-                    cellDiv.style.color = "var(--color-blue)";
-                    break;
-                default:
-                    cellDiv.innerText = (j + 1).toString();
-                    break;
-            }
+            setDivTile(cellDiv, tile, j);
 
             cellDiv.classList.add("cell");
             boardDiv.appendChild(cellDiv);
@@ -155,6 +149,22 @@ async function getProgram(walletProvider) {
         new anchor.web3.PublicKey(PROGRAM_ID),
         anchorProvider
     );
+}
+
+function setDivTile(cellDiv, tile, index) {
+    switch (tile) {
+        case "x":
+            cellDiv.innerText = "X";
+            cellDiv.style.color = "var(--color-red)";
+            break;
+        case "o":
+            cellDiv.innerText = "O";
+            cellDiv.style.color = "var(--color-blue)";
+            break;
+        default:
+            cellDiv.innerText = (index + 1).toString();
+            break;
+    }
 }
 
 function syncDisplayOnConnection(boolean) {

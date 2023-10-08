@@ -80,10 +80,40 @@ impl Board {
         Ok(())
     }
 
+    pub fn make_move(
+        &mut self,
+        participant: Pubkey,
+        index: usize,
+        key: Sign,
+    ) -> Result<()> {
+        require!(index < 9, BoardError::TictactoeIndexOutOfBounds);
+
+        self.tiles[index] = key;
+        self.turn += 1;
+
+        let is_existing_participant = self.players.iter().any(|player| match player {
+            Player::Human { pubkey } => pubkey == &participant,
+            Player::Robot | Player::None => false,
+        });
+
+        if is_existing_participant {
+            return Ok(());
+        }
+
+        for player in self.players.iter_mut() {
+            if player == &Player::None {
+                *player = Player::Human { pubkey: participant };
+                break;
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn complete(&mut self) -> Result<()> {
         require!(self.state == BoardState::Active, BoardError::GameAlreadyCompleted);
 
-        self.state = BoardState::Completed { is_robot_winner: false };
+        self.state = BoardState::Completed { is_robot_winner: true };
         self.turn = 0;
 
         Ok(())
