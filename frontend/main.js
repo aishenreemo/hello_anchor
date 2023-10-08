@@ -6,41 +6,82 @@ const PROGRAM_ID = "vGsRgLSQh24Jb2BjJkR6TFQGcmq2q9JBwv81qQZoQ4h";
 async function main() {
     const walletProvider = getProvider();
     const anchorProgram = await getProgram(walletProvider);
+    const container = document.getElementById("board-container");
 
-    await walletProvider.connect({ onlyIfTrusted: true }).catch(() => {});
-    await createEvents(walletProvider);
-    await fetchAccounts(anchorProgram);
+    await walletProvider.connect({ onlyIfTrusted: true })
+        .then(async () => await fetchBoards(anchorProgram))
+        .catch(() => container.style.display = "none");
+
+    await createEvents(walletProvider, anchorProgram);
 }
 
-async function createEvents(walletProvider) {
+async function createEvents(walletProvider, anchorProgram) {
     const toggleConnectButton = document.getElementById("connect-wallet");
     const buttonText = walletProvider.isConnected ? "Disconnect" : "Connect";
+    const container = document.getElementById("board-container");
 
     toggleConnectButton.innerText = `${buttonText} Wallet`;
     toggleConnectButton.addEventListener("click", async () => {
         if (walletProvider.isConnected) {
             await walletProvider.disconnect();
             toggleConnectButton.innerText = "Connect Wallet";
+            container.style.display = "none";
+
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
 
             return;
         }
 
         await walletProvider.connect();
+        await fetchBoards(anchorProgram);
+        container.style.display = "flex";
         toggleConnectButton.innerText = "Disconnect Wallet";
     });
 }
 
-async function fetchAccounts(anchorProgram) {
-    console.log(anchorProgram.account);
-    const dataContainer = document.getElementById("data-container");
-    const dataList = await anchorProgram.account.board.all();
+async function fetchBoards(anchorProgram) {
+    const container = document.getElementById("board-container");
+    const boards = await anchorProgram.account.board.all();
 
-    for (let i = 0; i < dataList.length; i++) {
-        const div = document.createElement("div");
-        div.innerText = `${dataList[i].publicKey}: ${JSON.stringify(dataList[i].account)}`;
+    for (let i = 0; i < boards.length; i++) {
+        const board = boards[Math.floor(i)];
+        const infoDiv = document.createElement("div");
+        const boardDiv = document.createElement("div");
+        const boardWrapper = document.createElement("div");
+        
+        infoDiv.classList.add("info");
+        boardDiv.classList.add("board");
+        boardWrapper.classList.add("board-wrapper");
 
-        dataContainer.appendChild(div);
-        console.log(dataList[i]);
+        infoDiv.innerText = `${board.account.players[1].human.pubkey}`;
+
+        for (let j = 0; j < board.account.tiles.length; j++) {
+            const tile = Object.keys(board.account.tiles[j])[0];
+            const cellDiv = document.createElement("div");
+
+            switch (tile) {
+                case "x":
+                    cellDiv.innerText = "X";
+                    cellDiv.style.color = "var(--color-red)";
+                    break;
+                case "o":
+                    cellDiv.innerText = "O";
+                    cellDiv.style.color = "var(--color-blue)";
+                    break;
+                default:
+                    cellDiv.innerText = (j + 1).toString();
+                    break;
+            }
+
+            cellDiv.classList.add("cell");
+            boardDiv.appendChild(cellDiv);
+        }
+
+        boardWrapper.appendChild(boardDiv);
+        boardWrapper.appendChild(infoDiv);
+        container.appendChild(boardWrapper);
     }
 }
 
