@@ -7,12 +7,14 @@ import utils from "./utils.js";
 const PROGRAM_ID = "vGsRgLSQh24Jb2BjJkR6TFQGcmq2q9JBwv81qQZoQ4h";
 
 async function main() {
+    utils.showLoader();
     const walletProvider = utils.getProvider();
     const anchorProgram = await getProgram();
 
     await createEvents(anchorProgram);
     await walletProvider.connect({ onlyIfTrusted: true })
         .catch(() => utils.syncDisplayOnConnection());
+    utils.hideLoader();
 }
 
 async function createEvents(anchorProgram) {
@@ -26,6 +28,7 @@ async function createEvents(anchorProgram) {
     );
 
     walletProvider.on("connect", async () => {
+        utils.showLoader();
         const balanceElement = document.getElementById("sol-balance");
         const balance = await anchorProgram.provider.connection
             .getBalance(walletProvider.publicKey);
@@ -36,12 +39,15 @@ async function createEvents(anchorProgram) {
 
         utils.syncDisplayOnConnection();
         await board.fetchBoards(anchorProgram);
+        utils.hideLoader();
     });
 
     walletProvider.on("disconnect", () => {
+        utils.showLoader();
         utils.syncDisplayOnConnection();
         toggleConnectButton.innerText = "Connect Wallet";
         errorElement.innerText = "";
+        utils.hideLoader();
     });
 
     const createBoardButton = document.getElementById("create-your-board");

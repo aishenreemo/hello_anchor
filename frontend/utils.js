@@ -40,9 +40,21 @@ function getProgramAddress(publicKey, programId) {
     return anchor.web3.PublicKey.findProgramAddressSync(boardSeeds, programId);
 }
 
+function showLoader() {
+    const loaderElement = document.getElementById("loader");
+    loaderElement.style.display = "inline-block";
+}
+
+function hideLoader() {
+    const loaderElement = document.getElementById("loader");
+    loaderElement.style.display = "none";
+}
+
 export default {
     setDivTile,
     syncDisplayOnConnection,
     getProvider,
     getProgramAddress,
+    showLoader,
+    hideLoader
 }

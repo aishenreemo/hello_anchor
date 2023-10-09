@@ -67,8 +67,6 @@ impl Board {
     }
 
     pub fn start(&mut self, owner: Pubkey) -> Result<()> {
-        require!(self.turn == 0, BoardError::GameAlreadyStarted);
-
         self.players = [Player::None; 5];
         self.players[0] = Player::Robot;
         self.players[1] = Player::Human { pubkey: owner };
