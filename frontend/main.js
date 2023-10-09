@@ -1,145 +1,57 @@
 import * as anchor from "@coral-xyz/anchor";
 import buffer from "buffer";
 
+import board from "./board.js";
+import utils from "./utils.js";
+
 const PROGRAM_ID = "vGsRgLSQh24Jb2BjJkR6TFQGcmq2q9JBwv81qQZoQ4h";
 
 async function main() {
-    const walletProvider = getProvider();
-    const anchorProgram = await getProgram(walletProvider);
+    const walletProvider = utils.getProvider();
+    const anchorProgram = await getProgram();
 
-    await createEvents(walletProvider, anchorProgram);
+    await createEvents(anchorProgram);
     await walletProvider.connect({ onlyIfTrusted: true })
-        .catch(() => syncDisplayOnConnection(false));
+        .catch(() => utils.syncDisplayOnConnection());
 }
 
-async function createEvents(walletProvider, anchorProgram) {
-    const toggleConnectButton = document.getElementById("connect-wallet");
-    const createBoardButton = document.getElementById("create-your-board");
-    const container = document.getElementById("board-container");
-    const balanceElement = document.getElementById("sol-balance");
+async function createEvents(anchorProgram) {
     const errorElement = document.getElementById("error");
+    const walletProvider = utils.getProvider();
+
+    const toggleConnectButton = document.getElementById("connect-wallet");
+    toggleConnectButton.addEventListener("click", async () => walletProvider.isConnected
+        ? await walletProvider.disconnect()
+        : await walletProvider.connect()
+    );
 
     walletProvider.on("connect", async () => {
-        const balance = await anchorProgram
-            .provider
-            .connection
+        const balanceElement = document.getElementById("sol-balance");
+        const balance = await anchorProgram.provider.connection
             .getBalance(walletProvider.publicKey);
 
         balanceElement.innerText = `${balance / anchor.web3.LAMPORTS_PER_SOL} SOL`;
         toggleConnectButton.innerText = "Disconnect Wallet";
         errorElement.innerText = "";
 
-        syncDisplayOnConnection(true);
-        await fetchBoards(walletProvider, anchorProgram, container);
+        utils.syncDisplayOnConnection();
+        await board.fetchBoards(anchorProgram);
     });
 
     walletProvider.on("disconnect", () => {
-        syncDisplayOnConnection(false);
+        utils.syncDisplayOnConnection();
         toggleConnectButton.innerText = "Connect Wallet";
         errorElement.innerText = "";
     });
 
-    toggleConnectButton.addEventListener("click", async () => {
-        walletProvider.isConnected
-            ? await walletProvider.disconnect()
-            : await walletProvider.connect();
-    });
-
-    createBoardButton.addEventListener("click", () => createBoard(
-        walletProvider,
-        anchorProgram
-    ));
+    const createBoardButton = document.getElementById("create-your-board");
+    createBoardButton.addEventListener("click", () => board.createBoard(anchorProgram));
 }
 
-async function createBoard(walletProvider, anchorProgram) {
-    if (!walletProvider.isConnected) {
-        return;
-    }
-
-    const errorElement = document.getElementById("error");
-    const boardSeeds = [
-        anchor.utils.bytes.utf8.encode("tictactoe-board"),
-        walletProvider.publicKey.toBuffer(),
-    ];
-
-    const [boardPDA, boardBump] = anchor
-        .web3
-        .PublicKey
-        .findProgramAddressSync(boardSeeds, anchorProgram.programId);
-
-    const providerAccount = await anchorProgram.account.board.fetch(boardPDA);
-
-    if (providerAccount) {
-        errorElement.innerText = "Tictactoe Board may already be initialized.";
-        return;
-    }
-
-    const boardAccounts = {
-        board: boardPDA,
-        owner: walletProvider.publicKey,
-    };
-
-    await anchorProgram.methods.createBoard(boardBump).accounts(boardAccounts).rpc();
-    await fetchBoards(walletProvider, anchorProgram, container);
-}
-
-async function fetchBoards(walletProvider, anchorProgram, container) {
-    while (container.firstChild) {
-        container.removeChild(container.firstChild);
-    }
-
-    const boards = await anchorProgram.account.board.all();
-    let providerBoardIndex = 0;
-
-    for (let i = 0; i < boards.length; i++) {
-        const board = boards[i];
-        const infoDiv = document.createElement("div");
-        const boardDiv = document.createElement("div");
-        const boardWrapper = document.createElement("div");
-
-        infoDiv.classList.add("info");
-        boardDiv.classList.add("board");
-        boardWrapper.classList.add("board-wrapper");
-
-        const pubkey = board.account.players[1].human.pubkey.toString();
-        infoDiv.innerText = pubkey;
-        boardWrapper.dataset.pubkey = pubkey;
-
-        if (pubkey == walletProvider.publicKey.toString()) {
-            providerBoardIndex = i;
-        }
-
-        for (let j = 0; j < board.account.tiles.length; j++) {
-            const tile = Object.keys(board.account.tiles[j])[0];
-            const cellDiv = document.createElement("div");
-
-            setDivTile(cellDiv, tile, j);
-
-            cellDiv.classList.add("cell");
-            boardDiv.appendChild(cellDiv);
-        }
-
-        boardWrapper.dataset.index = i;
-        boardWrapper.appendChild(boardDiv);
-        boardWrapper.appendChild(infoDiv);
-        container.appendChild(boardWrapper);
-    }
-
-    if (providerBoardIndex > 0) {
-        const elementA = container.firstChild;
-        const elementB = container.childNodes.item(providerBoardIndex);
-
-        elementB.parentNode.insertBefore(elementB, elementA);
-    }
-
-    if (container.firstChild.dataset.pubkey == walletProvider.publicKey.toString()) {
-        container.firstChild.style.border = "1px solid var(--color-blue)";
-    }
-}
-
-async function getProgram(walletProvider) {
+async function getProgram() {
     window.Buffer = buffer.Buffer;
 
+    const walletProvider = utils.getProvider();
     const options = anchor.AnchorProvider.defaultOptions();
     const connection = new anchor.web3.Connection(anchor.web3.clusterApiUrl("devnet"), "confirmed");
     const anchorProvider = new anchor.AnchorProvider(connection, walletProvider, options);
@@ -149,36 +61,6 @@ async function getProgram(walletProvider) {
         new anchor.web3.PublicKey(PROGRAM_ID),
         anchorProvider
     );
-}
-
-function setDivTile(cellDiv, tile, index) {
-    switch (tile) {
-        case "x":
-            cellDiv.innerText = "X";
-            cellDiv.style.color = "var(--color-red)";
-            break;
-        case "o":
-            cellDiv.innerText = "O";
-            cellDiv.style.color = "var(--color-blue)";
-            break;
-        default:
-            cellDiv.innerText = (index + 1).toString();
-            break;
-    }
-}
-
-function syncDisplayOnConnection(boolean) {
-    Array.from(document.getElementsByClassName("connected")).forEach(element => {
-        element.style.display = boolean ? element.dataset.display : "none";
-    });
-}
-
-function getProvider() {
-    if (window?.phantom?.solana?.isPhantom) {
-        return window.phantom.solana;
-    }
-
-    window.open("https://phantom.app/", "_blank");
 }
 
 main();

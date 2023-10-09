@@ -53,6 +53,16 @@ body {
 
 button {
     padding: 0.5rem;
+    border-radius: 0.1rem;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s, transform 0.3s;
+    background-color: var(--color-blue);
+}
+
+button:hover {
+    background-color: var(--color-cyan);
 }
 
 #error {
@@ -81,9 +91,24 @@ button {
 }
 
 .info {
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+    align-items: start;
+}
+
+.info > .pubkey {
     font-weight: bold;
     font-size: 1.5rem;
     overflow-wrap: break-word;
+}
+
+.info > .restart {
+    background-color: var(--color-red);
+}
+
+.info > .restart:hover {
+    background-color: var(--color-orange);
 }
 
 .board {
@@ -107,4 +132,12 @@ button {
     font-weight: bold;
     background-color: var(--color-bg);
     border: 2px solid var(--color-fg);
+}
+
+button.cell:hover {
+    transform: scale(1.05);
+}
+
+button.cell:active {
+    transform: scale(0.95);
 }
