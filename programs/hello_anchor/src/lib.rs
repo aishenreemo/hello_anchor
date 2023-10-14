@@ -20,17 +20,13 @@ pub mod hello_anchor {
         ctx.accounts.board.start(ctx.accounts.owner.key())
     }
 
-    pub fn complete_board(ctx: Context<MutateBoard>) -> Result<()> {
-        ctx.accounts.board.complete()
-    }
-
     pub fn make_move(
         ctx: Context<MutateBoard>,
         participant: Pubkey,
         index: u8,
         key: Sign,
     ) -> Result<()> {
-        ctx.accounts.board.make_move(participant, index as usize, key)
+        ctx.accounts.board.make_player_move(participant, index as usize, key)
     }
 }
 

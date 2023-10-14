@@ -6,6 +6,8 @@ pub enum BoardError {
     GameAlreadyCompleted,
     #[msg("Provided index argument is out of bounds.")]
     TictactoeIndexOutOfBounds,
+    #[msg("Tictactoe board has no available moves left.")]
+    TictactoeNoAvailableMoves,
     #[msg("Board unknown error.")]
     Unknown,
 }

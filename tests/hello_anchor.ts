@@ -52,14 +52,4 @@ describe("hello_anchor", () => {
 
         console.log(await program.account.board.fetch(boardPDA));
     });
-
-    it("completes board", async () => {
-        await program
-            .methods
-            .completeBoard()
-            .accounts(boardAccounts)
-            .rpc();
-
-        console.log(await program.account.board.fetch(boardPDA));
-    })
 });
