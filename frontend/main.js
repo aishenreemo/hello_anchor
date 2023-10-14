@@ -18,7 +18,6 @@ async function main() {
 }
 
 async function createEvents(anchorProgram) {
-    const errorElement = document.getElementById("error");
     const walletProvider = utils.getProvider();
 
     const toggleConnectButton = document.getElementById("connect-wallet");
@@ -35,7 +34,7 @@ async function createEvents(anchorProgram) {
 
         balanceElement.innerText = `${balance / anchor.web3.LAMPORTS_PER_SOL} SOL`;
         toggleConnectButton.innerText = "Disconnect Wallet";
-        errorElement.innerText = "";
+        utils.setErrorMessage("");
 
         utils.syncDisplayOnConnection();
         await board.fetchBoards(anchorProgram);
@@ -46,12 +45,18 @@ async function createEvents(anchorProgram) {
         utils.showLoader();
         utils.syncDisplayOnConnection();
         toggleConnectButton.innerText = "Connect Wallet";
-        errorElement.innerText = "";
+        utils.setErrorMessage("");
         utils.hideLoader();
     });
 
     const createBoardButton = document.getElementById("create-your-board");
-    createBoardButton.addEventListener("click", () => board.createBoard(anchorProgram));
+    const cooldownCreateBoard = utils.cooldown(
+        board.createBoard,
+        "Creating board button is on cooldown!",
+        20000,
+    );
+
+    createBoardButton.addEventListener("click", () => cooldownCreateBoard(anchorProgram));
 }
 
 async function getProgram() {

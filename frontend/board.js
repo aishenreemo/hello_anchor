@@ -1,10 +1,7 @@
 import utils from "./utils";
 
 async function createBoard(anchorProgram) {
-    utils.showLoader();
     const walletProvider = utils.getProvider();
-    const errorElement = document.getElementById("error");
-
     const [boardPDA, boardBump] = utils.getProgramAddress(
         walletProvider.publicKey,
         anchorProgram.programId,
@@ -17,18 +14,26 @@ async function createBoard(anchorProgram) {
 
     const providerAccount = await anchorProgram.account.board.fetch(boardPDA);
     if (providerAccount) {
-        errorElement.innerText = "Tictactoe Board may already be initialized.";
+        utils.setErrorMessage("Tictactoe Board may already be initialized.");
         utils.hideLoader();
         return;
     }
 
-    await anchorProgram.methods.createBoard(boardBump).accounts(boardAccounts).rpc().catch(() => {});
-    await updateBoard(anchorProgram, boardPDA);
-    utils.hideLoader();
+    try {
+        await anchorProgram
+            .methods
+            .createBoard(boardBump)
+            .accounts(boardAccounts)
+            .rpc()
+            .catch(console.error);
+
+        await updateBoard(anchorProgram, boardPDA);
+    } catch (_) {
+        utils.setErrorMessage("Something went wrong when creating a board, please refresh the page.");
+    }
 }
 
 async function restartBoard(anchorProgram) {
-    utils.showLoader();
     const walletProvider = utils.getProvider();
     const [boardPDA, _] = utils.getProgramAddress(
         walletProvider.publicKey,
@@ -40,13 +45,20 @@ async function restartBoard(anchorProgram) {
         owner: walletProvider.publicKey,
     };
 
-    await anchorProgram.methods.startBoard().accounts(boardAccounts).rpc().catch(() => {});
-    await updateBoard(anchorProgram, boardPDA);
-    utils.hideLoader();
+    try {
+        await anchorProgram
+            .methods
+            .startBoard()
+            .accounts(boardAccounts)
+            .rpc();
+
+        await updateBoard(anchorProgram, boardPDA);
+    } catch (_) {
+        utils.setErrorMessage("Something went wrong when restarting board, please refresh the page.");
+    }
 }
 
 async function makeMoveBoard(anchorProgram, ownerPublicKey, index) {
-    utils.showLoader();
     const walletProvider = utils.getProvider();
     const [boardPDA, _] = utils.getProgramAddress(
         ownerPublicKey,
@@ -58,15 +70,18 @@ async function makeMoveBoard(anchorProgram, ownerPublicKey, index) {
         owner: ownerPublicKey,
     };
 
-    await anchorProgram
-        .methods
-        .makeMove(walletProvider.publicKey, index, {"x": {}})
-        .accounts(boardAccounts)
-        .rpc()
-        .catch(() => {});
+    try {
+        await anchorProgram
+            .methods
+            .makeMove(walletProvider.publicKey, index, {"x": {}})
+            .accounts(boardAccounts)
+            .rpc()
+            .catch(console.error);
 
-    await updateBoard(anchorProgram, boardPDA);
-    utils.hideLoader();
+        await updateBoard(anchorProgram, boardPDA);
+    } catch (_) {
+        utils.setErrorMessage("Something went wrong when restarting board, please refresh the page.");
+    }
 }
 
 async function fetchBoards(anchorProgram) {
@@ -134,6 +149,12 @@ function createBoardDiv(anchorProgram, data) {
     const status = Object.keys(data.state)[0];
     boardDiv.classList.add("board");
 
+    const cooldownMakeMoveBoard = utils.cooldown(
+        makeMoveBoard,
+        "Wait a while before creating the next move",
+        10000,
+    );
+
     for (let i = 0; i < data.tiles.length; i++) {
         const tile = Object.keys(data.tiles[i])[0];
         const isCellClickable = status != "completed" && tile == "n";
@@ -150,7 +171,14 @@ function createBoardDiv(anchorProgram, data) {
         }
 
         const pubkey = data.players[1].human.pubkey;
-        cellElement.addEventListener("click", () => makeMoveBoard(anchorProgram, pubkey, i));
+        cellElement.addEventListener("click", async () => {
+            if (utils.isLoaderActive()) {
+                utils.setErrorMessage("Please resolve the previous request before requesting another!");
+                return;
+            }
+
+            await cooldownMakeMoveBoard(anchorProgram, pubkey, i);
+        });
     }
 
     return boardDiv;
@@ -183,7 +211,13 @@ function createInfoDiv(anchorProgram, data) {
         if (data.turn > 1 || status == "completed") {
             restartButton.innerText = "Restart Game";
             infoDiv.appendChild(restartButton);
-            restartButton.addEventListener("click", () => restartBoard(anchorProgram));
+            const cooldownRestartBoard = utils.cooldown(
+                restartBoard,
+                "Restarting board is on cooldown",
+                30000,
+            );
+
+            restartButton.addEventListener("click", () => cooldownRestartBoard(anchorProgram));
         }
     }
 

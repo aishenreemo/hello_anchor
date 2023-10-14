@@ -43,11 +43,44 @@ function getProgramAddress(publicKey, programId) {
 function showLoader() {
     const loaderElement = document.getElementById("loader");
     loaderElement.style.display = "inline-block";
+    loaderElement.dataset.active = "yes";
 }
 
 function hideLoader() {
     const loaderElement = document.getElementById("loader");
     loaderElement.style.display = "none";
+    loaderElement.dataset.active = "no";
+}
+
+function isLoaderActive() {
+    const loaderElement = document.getElementById("loader");
+    return loaderElement.dataset.active == "yes";
+}
+
+function cooldown(func, msg = "Slow down!", timeout=1000) {
+    let isOnCooldown = false;
+
+    return async function(...args) {
+        if (isOnCooldown) {
+            setErrorMessage(msg);
+            return;
+        }
+
+        showLoader();
+        isOnCooldown = true;
+        await func.apply(this, args); 
+        hideLoader();
+
+        setTimeout(() => {
+            isOnCooldown = false
+            setErrorMessage("");
+        }, timeout);
+    };
+}
+
+function setErrorMessage(msg) {
+    const errorElement = document.getElementById("error");
+    errorElement.innerText = msg;
 }
 
 export default {
@@ -56,5 +89,8 @@ export default {
     getProvider,
     getProgramAddress,
     showLoader,
-    hideLoader
+    hideLoader,
+    isLoaderActive,
+    cooldown,
+    setErrorMessage,
 }
